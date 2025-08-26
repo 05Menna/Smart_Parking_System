@@ -165,3 +165,13 @@
 
 - Deploy chatbot with Docker or locally.
 - Connect Supabase API + LangChain for natural language answers.
+
+
+```mermaid
+flowchart TB
+    ESP32["ESP32 (Sensors & Actuators)"] --> MQTT["MQTT Broker (HiveMQ)"]
+    MQTT --> NodeRED["Node-RED"]
+    NodeRED --> Supabase["Supabase (Database + Auth)"]
+    Supabase --> Flutter["Flutter App"]
+    Supabase --> FastAPI["FastAPI + LangChain Chatbot"]
+    Flutter --> MQTT
