@@ -166,6 +166,7 @@
 - Deploy chatbot with Docker or locally.
 - Connect Supabase API + LangChain for natural language answers.
 
+## 🚀 System Architecture
 
 ```mermaid
 flowchart TB
