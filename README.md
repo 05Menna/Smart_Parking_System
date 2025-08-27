@@ -13,9 +13,8 @@
 - HiveMQ Cloud → Secure MQTT broker for device ↔ cloud communication
 - Node-RED → MQTT to Supabase data pipeline
 - Supabase (Postgres + Auth) → Persistent database + user authentication
-- Flutter App → Mobile app connected to MQTT + Supabase
+- Web App → Web app connected to MQTT + Supabase
 - FastAPI + LangChain → AI-powered chatbot interface
-- Docker → For containerized deployment of backend services
 
 
 
@@ -116,7 +115,7 @@
   - parking_logs → entry/exit logs.
   - sensor_data → slot, rain, lighting, gate status.
 
-### Flutter App
+### Web App
 
 - Connects to MQTT for live status updates.
 - Connects to Supabase for user auth + historical data.
@@ -156,14 +155,14 @@
 - Create tables: users, parking_logs, sensor_data.
 - Enable Auth for Flutter app.
 
-### 5️⃣ Flutter App
+### 5️⃣ Web App
 
 - Connect to Supabase (for auth + logs).
 - Subscribe to MQTT topics for live updates.
 
 ### 6️⃣ FastAPI Chatbot
 
-- Deploy chatbot with Docker or locally.
+- Deploy chatbot with pythoneverywhere.
 - Connect Supabase API + LangChain for natural language answers.
 
 ## 🚀 System Architecture Diagram
