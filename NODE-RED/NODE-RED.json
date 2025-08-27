@@ -1,0 +1,462 @@
+[
+    {
+        "id": "f46f6577c9820501",
+        "type": "tab",
+        "label": "Flow 4",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "dff8f9ae8b96dab7",
+        "type": "switch",
+        "z": "f46f6577c9820501",
+        "name": "Route by Topic",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "cont",
+                "v": "parking/system/status",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "parking/system/overview",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "parking/sensors/environment",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "parking/actuators/gate/detailed",
+                "vt": "str"
+            },
+            {
+                "t": "cont",
+                "v": "parking/sensors/slots/slot",
+                "vt": "str"
+            }
+        ],
+        "checkall": "false",
+        "repair": true,
+        "outputs": 5,
+        "x": 820,
+        "y": 360,
+        "wires": [
+            [
+                "18d768adb3c06b92"
+            ],
+            [
+                "a2ca1bdaff28e10b"
+            ],
+            [
+                "98652c5e486e2145"
+            ],
+            [
+                "591381ee5c9b77c0",
+                "d779fbd3935fde57"
+            ],
+            [
+                "77abe5643a170fce",
+                "77016f8554028163"
+            ]
+        ]
+    },
+    {
+        "id": "18d768adb3c06b92",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "System Status (UPSERT)",
+        "func": "let p;\n\ntry {\n  p = (typeof msg.payload === \"string\" && msg.payload.length > 0) ? JSON.parse(msg.payload) : msg.payload;\n} catch (e) {\n  node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n  return null;\n}\n\nif (!p || typeof p !== 'object' || Object.keys(p).length === 0) {\n  node.warn(\"Received empty or invalid payload, skipping request.\");\n  return null;\n}\n\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/system_status?on_conflict=id\";\nmsg.method = \"POST\";\nmsg.headers = {\n  \"Content-Type\": \"application/json\",\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n  \"Prefer\": \"return=minimal\"\n};\nmsg.payload = {\n  id: 1,\n  status: p.status ?? \"unknown\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1090,
+        "y": 280,
+        "wires": [
+            [
+                "b38474b850690a24"
+            ]
+        ]
+    },
+    {
+        "id": "b38474b850690a24",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase system_status",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/system_status?on_conflict=id",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1450,
+        "y": 280,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "a2ca1bdaff28e10b",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "System Overview (UPSERT)",
+        "func": "let p;\n\n// Log complete message for debugging\nnode.warn(`=== SYSTEM OVERVIEW DEBUG ===`);\nnode.warn(`Topic: ${msg.topic}`);\nnode.warn(`Raw payload: ${msg.payload} (type: ${typeof msg.payload})`);\nnode.warn(`Payload length: ${msg.payload ? msg.payload.length : 'null/undefined'}`);\n\ntry {\n  // Handle both string and object payloads\n  if (typeof msg.payload === \"string\" && msg.payload.length > 0) {\n    p = JSON.parse(msg.payload);\n  } else if (typeof msg.payload === \"object\" && msg.payload !== null) {\n    p = msg.payload;\n  } else {\n    p = null;\n  }\n} catch (e) {\n  node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n  return null;\n}\n\n// Log parsed payload\nnode.warn(`Parsed payload: ${JSON.stringify(p)} (type: ${typeof p}, isArray: ${Array.isArray(p)})`);\n\n// Better validation - reject empty arrays, null, undefined, or empty objects\nif (!p || Array.isArray(p) || typeof p !== 'object' || Object.keys(p).length === 0) {\n  node.warn(`Received invalid/empty payload, skipping request. Payload: ${JSON.stringify(p)}`);\n  return null;\n}\n\n// Validate that we have the expected properties\nconst requiredFields = ['available_slots', 'gate_open', 'ceiling_closed', 'night_mode', 'rain_detected', 'buzzer_active', 'gate_sensor_before', 'gate_sensor_after', 'rain_sensor_value'];\nconst hasRequiredFields = requiredFields.some(field => p.hasOwnProperty(field));\n\nif (!hasRequiredFields) {\n  node.warn(`Payload missing required system overview fields. Available fields: ${Object.keys(p).join(', ')}`);\n  return null;\n}\n\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/system_overview\";\nmsg.method = \"POST\";\nmsg.headers = {\n  \"Content-Type\": \"application/json\",\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n  \"Prefer\": \"resolution=merge-duplicates\"\n};\nmsg.payload = {\n    id: 1,\n  available_slots: Number(p.available_slots || 0),\n  gate_open: !!p.gate_open,\n  ceiling_closed: !!p.ceiling_closed,\n  night_mode: !!p.night_mode,\n  rain_detected: !!p.rain_detected,\n  buzzer_active: !!p.buzzer_active,\n  gate_sensor_before: !!p.gate_sensor_before,\n  gate_sensor_after: !!p.gate_sensor_after,\n  rain_sensor_value: Number(p.rain_sensor_value || 0)\n};\n\n// Validate payload before sending\nnode.warn(`Final payload to send: ${JSON.stringify(msg.payload)}`);\nnode.warn(`Headers: ${JSON.stringify(msg.headers)}`);\nnode.warn(`Method: ${msg.method}, URL: ${msg.url}`);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1100,
+        "y": 320,
+        "wires": [
+            [
+                "47751716e6fdc0c5"
+            ]
+        ]
+    },
+    {
+        "id": "47751716e6fdc0c5",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase system_overview",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/system_overview?on_conflict=id",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1440,
+        "y": 320,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "98652c5e486e2145",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "Environment (INSERT)",
+        "func": "let p;\n\ntry {\n  p = (typeof msg.payload === \"string\" && msg.payload.length > 0) ? JSON.parse(msg.payload) : msg.payload;\n} catch (e) {\n  node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n  return null;\n}\n\nif (!p || typeof p !== 'object' || Object.keys(p).length === 0) {\n  node.warn(\"Received empty or invalid payload, skipping request.\");\n  return null;\n}\n\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/environment\";\nmsg.method = \"POST\";\nmsg.headers = {\n  \"Content-Type\": \"application/json\",\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\"\n};\nmsg.payload = {\n  light_level: String(p.light_level ?? \"\"),\n  night_mode: !!p.night_mode,\n  corner_lights: String(p.corner_lights ?? (p.night_mode ? \"on\" : \"off\")),\n  rain_sensor_value: Number(p.rain_sensor_value ?? 0),\n  rain_detected: !!p.rain_detected,\n  rain_threshold: Number(p.rain_threshold ?? 0)\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 360,
+        "wires": [
+            [
+                "557dddc99e0f8dbe"
+            ]
+        ]
+    },
+    {
+        "id": "557dddc99e0f8dbe",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase environment",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/environment",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1470,
+        "y": 360,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "591381ee5c9b77c0",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "Gate Status (INSERT)",
+        "func": "let p;\n\ntry {\n  p = (typeof msg.payload === \"string\" && msg.payload.length > 0) ? JSON.parse(msg.payload) : msg.payload;\n} catch (e) {\n  node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n  return null;\n}\n\nif (!p || typeof p !== 'object' || Object.keys(p).length === 0) {\n  node.warn(\"Received empty or invalid payload, skipping request.\");\n  return null;\n}\n\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/gate_status\";\nmsg.method = \"POST\";\nmsg.headers = {\n  \"Content-Type\": \"application/json\",\n  \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n  \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\"\n};\nmsg.payload = {\n  state: String(p.state ?? \"\"),\n  vehicle_before_gate: !!p.vehicle_before_gate,\n  vehicle_after_gate: !!p.vehicle_after_gate,\n  sensor_before_value: Number(p.sensor_before_value ?? 0),\n  sensor_after_value: Number(p.sensor_after_value ?? 0),\n  auto_close_timeout: Number(p.auto_close_timeout ?? 0),\n  state_duration: Number(p.state_duration ?? 0)\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 400,
+        "wires": [
+            [
+                "0a399ab824f3609a"
+            ]
+        ]
+    },
+    {
+        "id": "d779fbd3935fde57",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "Gate Status Current (UPSERT)",
+        "func": "let p;\n\n// Debugging for the gate payload\nnode.warn(`=== GATE STATUS CURRENT DEBUG ===`);\nnode.warn(`Topic: ${msg.topic}`);\nnode.warn(`Raw payload: ${msg.payload} (type: ${typeof msg.payload})`);\n\ntry {\n    if (typeof msg.payload === \"string\" && msg.payload.length > 0) {\n        p = JSON.parse(msg.payload);\n    } else if (typeof msg.payload === \"object\" && msg.payload !== null) {\n        p = msg.payload;\n    } else {\n        p = null;\n    }\n} catch (e) {\n    node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n    return null;\n}\n\nif (!p || Array.isArray(p) || typeof p !== 'object' || Object.keys(p).length === 0) {\n    node.warn(`Received invalid/empty payload, skipping request. Payload: ${JSON.stringify(p)}`);\n    return null;\n}\n\n// Ensure required fields exist\nconst requiredFields = ['state', 'vehicle_before_gate', 'vehicle_after_gate', 'sensor_before_value', 'sensor_after_value', 'auto_close_timeout', 'state_duration'];\nconst hasRequiredFields = requiredFields.some(field => p.hasOwnProperty(field));\n\nif (!hasRequiredFields) {\n    node.warn(`Payload missing required gate status fields. Available fields: ${Object.keys(p).join(', ')}`);\n    return null;\n}\n\n// Correct URL with on_conflict\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/gate_status_current\";\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n    \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n    \"Prefer\": \"resolution=merge-duplicates\"\n};\n\n// Payload with hardcoded ID to ensure upsert\nmsg.payload = {\n    id: 1, // Assumes 'id' is the primary key for your gate table\n    state: String(p.state ?? \"\"),\n    vehicle_before_gate: !!p.vehicle_before_gate,\n    vehicle_after_gate: !!p.vehicle_after_gate,\n    sensor_before_value: Number(p.sensor_before_value ?? 0),\n    sensor_after_value: Number(p.sensor_after_value ?? 0),\n    auto_close_timeout: Number(p.auto_close_timeout ?? 0),\n    state_duration: Number(p.state_duration ?? 0)\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1110,
+        "y": 440,
+        "wires": [
+            [
+                "f1c8c51a5fa4890c"
+            ]
+        ]
+    },
+    {
+        "id": "0a399ab824f3609a",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase gate_status",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/gate_status",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1460,
+        "y": 400,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "77abe5643a170fce",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "Parking Slots (INSERT on Change)",
+        "func": "let p;\n\n// Get previous state from flow context, or initialize as an empty object\nconst previousStates = flow.get('last_slot_states') || {};\n\ntry {\n  p = (typeof msg.payload === \"string\" && msg.payload.length > 0) ? JSON.parse(msg.payload) : msg.payload;\n} catch (e) {\n  node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n  return null;\n}\n\nif (!p || typeof p !== 'object' || Object.keys(p).length === 0 || !p.hasOwnProperty('slot_id') || p.is_occupied === previousStates[p.slot_id]) {\n  // If payload is invalid or state hasn't changed for this specific slot, stop the flow\n  node.warn(`Slot ${p?.slot_id} state unchanged or payload invalid, skipping request.`);\n  return null;\n}\n\n// Store the new state in flow context for the next check\npreviousStates[p.slot_id] = p.is_occupied;\nflow.set('last_slot_states', previousStates);\n\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/parking_slots\";\nmsg.method = \"POST\";\nmsg.headers = {\"Content-Type\": \"application/json\",\"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\"};\nmsg.payload = {\n  slot_id: Number(p.slot_id),\n  is_occupied: !!p.is_occupied,\n  sensor_raw: Number(p.sensor_raw ?? 0),\n  sensor_filtered: Number(p.sensor_filtered ?? 0),\n  last_changed: Number(p.last_changed ?? Date.now()),\n  stable_readings: Number(p.stable_readings ?? 0),\n  led_status: String(p.led_status ?? (p.is_occupied ? \"red\" : \"green\"))\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1120,
+        "y": 480,
+        "wires": [
+            [
+                "5b05ba980cecae0d"
+            ]
+        ]
+    },
+    {
+        "id": "77016f8554028163",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "Parking Slots Current (UPSERT)",
+        "func": "let p;\n\n// Debugging for the parking slot payload\nnode.warn(`=== PARKING SLOTS UPSERT DEBUG ===`);\nnode.warn(`Topic: ${msg.topic}`);\nnode.warn(`Raw payload: ${JSON.stringify(msg.payload)} (type: ${typeof msg.payload})`);\n\ntry {\n    if (typeof msg.payload === \"string\" && msg.payload.length > 0) {\n        p = JSON.parse(msg.payload);\n    } else if (typeof msg.payload === \"object\" && msg.payload !== null) {\n        p = msg.payload;\n    } else {\n        p = null;\n    }\n} catch (e) {\n    node.error(`Failed to parse JSON payload: ${e.message}`, msg);\n    return null;\n}\n\nif (!p || Array.isArray(p) || typeof p !== 'object' || Object.keys(p).length === 0) {\n    node.warn(`Received empty or invalid payload, skipping request. Payload: ${JSON.stringify(p)}`);\n    return null;\n}\n\n// Validate required fields\nif (!p.hasOwnProperty('slot_id')) {\n    node.warn(`Missing required field: slot_id. Available fields: ${Object.keys(p).join(', ')}`);\n    return null;\n}\n\n// Ensure slot_id is valid (1-4)\nconst slotId = Number(p.slot_id);\nif (isNaN(slotId) || slotId < 1 || slotId > 4) {\n    node.warn(`Invalid slot_id: ${p.slot_id}. Must be 1-4.`);\n    return null;\n}\n\nmsg.url = \"https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/parking_slots_current\";\nmsg.method = \"POST\";\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"apikey\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n    \"Authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1aGpiaXN3dWtlc3JvbG1idm9wIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTg2NjcwMywiZXhwIjoyMDcxNDQyNzAzfQ.hfImxE5gvZMyX3drrLLPeG5rmJXIZc7GBRSOFKqrghE\",\n    \"Prefer\": \"resolution=merge-duplicates\"\n};\n\n// Construct payload with proper slot_id\nmsg.payload = {\n    slot_id: slotId, // This is the key for UPSERT\n    is_occupied: !!p.is_occupied,\n    sensor_raw: Number(p.sensor_raw ?? 0),\n    sensor_filtered: Number(p.sensor_filtered ?? 0),\n    last_changed: Number(p.last_changed ?? Date.now()),\n    stable_readings: Number(p.stable_readings ?? 0),\n    led_status: String(p.led_status ?? (p.is_occupied ? \"red\" : \"green\"))\n};\n\nnode.warn(`Final payload for slot ${slotId}: ${JSON.stringify(msg.payload)}`);\nreturn msg;",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1110,
+        "y": 520,
+        "wires": [
+            [
+                "7128faf4851a94a8"
+            ]
+        ]
+    },
+    {
+        "id": "7128faf4851a94a8",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase parking_slots_current",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/parking_slots_current",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1430,
+        "y": 520,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "7007df9bd70d709e",
+        "type": "function",
+        "z": "f46f6577c9820501",
+        "name": "Handle Response",
+        "func": "if (msg.statusCode >= 400) {\n  node.error(`HTTP Error: ${msg.statusCode}`, msg);\n  return null;\n}\nnode.log(`Success: ${msg.statusCode}`);\nreturn msg;",
+        "outputs": 1,
+        "x": 1770,
+        "y": 420,
+        "wires": [
+            [
+                "0358d2586f55e15b"
+            ]
+        ]
+    },
+    {
+        "id": "349543086482adc4",
+        "type": "mqtt in",
+        "z": "f46f6577c9820501",
+        "name": "",
+        "topic": "parking/#",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "2a50b502c1228f7c",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 640,
+        "y": 360,
+        "wires": [
+            [
+                "dff8f9ae8b96dab7"
+            ]
+        ]
+    },
+    {
+        "id": "0358d2586f55e15b",
+        "type": "debug",
+        "z": "f46f6577c9820501",
+        "name": "Debug Output",
+        "active": true,
+        "tosidebar": "true",
+        "console": false,
+        "tostatus": "false",
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "payload",
+        "statusType": "auto",
+        "x": 1960,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "f1c8c51a5fa4890c",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase gate_status_current",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/gate_status_current?on_conflict=id",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1430,
+        "y": 440,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "5b05ba980cecae0d",
+        "type": "http request",
+        "z": "f46f6577c9820501",
+        "name": "Supabase parking_slots",
+        "method": "use",
+        "ret": "txt",
+        "paytoqs": "ignore",
+        "url": "https://fuhjbiswukesrolmbvop.supabase.co/rest/v1/parking_slots",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 1450,
+        "y": 480,
+        "wires": [
+            [
+                "7007df9bd70d709e"
+            ]
+        ]
+    },
+    {
+        "id": "2a50b502c1228f7c",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "858a3089681b477597400a3b5c9ba46b.s1.eu.hivemq.cloud",
+        "port": "8883",
+        "tls": "",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": true,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]
