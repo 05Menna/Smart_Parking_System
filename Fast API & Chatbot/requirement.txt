@@ -1,0 +1,10 @@
+fastapi
+pydantic
+uvicorn
+paho-mqtt
+langchain
+langchain-google-genai
+supabase
+requests
+typing
+re
